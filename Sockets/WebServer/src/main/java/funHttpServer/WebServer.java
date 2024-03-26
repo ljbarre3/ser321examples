@@ -25,6 +25,8 @@ import java.util.Random;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.nio.charset.Charset;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 class WebServer {
   public static void main(String args[]) {
@@ -197,7 +199,8 @@ class WebServer {
           // This multiplies two numbers, there is NO error handling, so when
           // wrong data is given this just crashes
 
-          Map<String, String> query_pairs = new LinkedHashMap<String, String>();
+          try {
+	  Map<String, String> query_pairs = new LinkedHashMap<String, String>();
           // extract path parameters
           query_pairs = splitQuery(request.replace("multiply?", ""));
 
@@ -214,9 +217,14 @@ class WebServer {
           builder.append("\n");
           builder.append("Result is: " + result);
 
-          // TODO: Include error handling here with a correct error code and
-          // a response that makes sense
-
+          } catch (Exception e){
+             builder.append("HTTP/1.1 400 BAD REQUEST\n");
+	     builder.append("Content-Type: text/html; charset=utf-8\n");
+	     builder.append("\n");
+             builder.append("Invalid Parameters, please enter two numbers");
+	     builder.append("\n");
+             builder.append("please use the format IP/multiply?num1=2&num2=3");
+ 	  }
         } else if (request.contains("github?")) {
           // pulls the query from the request and runs it with GitHub's REST API
           // check out https://docs.github.com/rest/reference/
@@ -229,16 +237,114 @@ class WebServer {
           Map<String, String> query_pairs = new LinkedHashMap<String, String>();
           query_pairs = splitQuery(request.replace("github?", ""));
           String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
-          System.out.println(json);
-
+          /*JSONObject jo = JSONObject(json);
+	  JSONArray arr = jo.getJSONArray("");
+          int n = arr.length();
           builder.append("HTTP/1.1 200 OK\n");
           builder.append("Content-Type: text/html; charset=utf-8\n");
-          builder.append("\n");
-          builder.append("Check the todos mentioned in the Java source file");
-          // TODO: Parse the JSON returned by your fetch and create an appropriate
-          // response based on what the assignment document asks for
+          for(int i = 0; i < n; i++){
+           JSONObject repository = arr.getJSONObject(i);
+           String name = repository.get("full_name");
+           String id = repository.get("id");
+           String login = repository.get("login");
+           builder.append("\n");
+           builder.append("full_name: " + name);
+           builder.append("\n");
+           builder.append("Login: " + login);
+           builder.append("\n");
+           builder.append("id: " + id);
+          }
+*/
 
-        } else {
+        } else if (request.contains("dateDifference?")){
+	 try{
+	 Map<String, String> query_pairs = new LinkedHashMap<String, String>();
+	 query_pairs = splitQuery(request.replace("dateDifference?", ""));
+	 Integer date1 = 20200101;
+	 Integer date2 = 20242503;
+	 try{
+         // extract required fields from parameters
+         date1 = Integer.parseInt(query_pairs.get("date1"));
+         date2 = Integer.parseInt(query_pairs.get("date2"));
+	 } catch (NumberFormatException e){
+		builder.append("HTTP/1.1 400 Bad Request\n");
+                builder.append("Content-Type: text/html; charset=utf-8\n");
+                builder.append("\n");
+                builder.append("Please put integers after the date1= and date2=");
+		response = builder.toString().getBytes();
+		return response;
+	 }
+	 //YYYYMMDD
+	 int year1 = date1 / 10000;
+	 int year2 = date2 / 10000;
+         int month1 = (date1 % 10000) / 100;
+	 int month2 = (date2 % 10000) / 100;
+	 int day1 = date1 % 100;
+	 int day2 = date2 % 100;
+	 int yearDifference = 0;
+	 int monthDifference = 0;
+	 int dayDifference = 0;
+	 if(year1 > year2){
+	 	yearDifference = year1 - year2;
+	 } else {
+		yearDifference = year2 - year1;
+	 }
+	 if(month1 > month2){
+		monthDifference = month1 - month2;
+	 } else {
+		monthDifference = month2 - month1;
+	 }
+	 if(day1 > day2){
+		dayDifference = day1 - day2;
+	 } else {
+		dayDifference = day2 - day1;
+	 }
+	 builder.append("HTTP/1.1 200 OK\n");
+         builder.append("Content-Type: text/html; charset=utf-8\n");
+         builder.append("\n");
+         builder.append("Date 1: " + month1 + "/" + day1 + "/" + year1);
+	 builder.append("\n");
+	 builder.append("Date 2: " + month2 + "/" + day2 + "/" + year2);
+	 builder.append("\n");
+	 builder.append("These Dates are " + yearDifference + " years Apart. " + monthDifference + " months apart and " + dayDifference + " days apart");
+	 } catch (Exception e){
+		builder.append("HTTP/1.1 400 Bad Request\n");
+          	builder.append("Content-Type: text/html; charset=utf-8\n");
+          	builder.append("\n");
+          	builder.append("Please Make a Proper request.");
+	 }
+	} else if (request.contains("stringConcatenate?")) {
+		try{
+		Map<String, String> query_pairs = new LinkedHashMap<String, String>();
+         	query_pairs = splitQuery(request.replace("stringConcatenate?", ""));
+		String string1;
+		String string2;
+		try{
+         	// extract required fields from parameters
+         	string1 = query_pairs.get("string1");
+         	string2 = query_pairs.get("string2");
+         	} catch (NumberFormatException e){
+                	builder.append("HTTP/1.1 400 Bad Request\n");
+                	builder.append("Content-Type: text/html; charset=utf-8\n");
+                	builder.append("\n");
+                	builder.append("Please put Strings after the String1= and String2=");
+                	response = builder.toString().getBytes();
+                	return response;
+         	}
+
+		String largeString = string1 + string2;
+		
+		builder.append("HTTP/1.1 200 OK\n");
+          	builder.append("Content-Type: text/html; charset=utf-8\n");
+          	builder.append("\n");
+          	builder.append("Your String concatenated is: " + largeString);
+		} catch (Exception e){
+			builder.append("HTTP/1.1 400 Bad Request\n");
+          		builder.append("Content-Type: text/html; charset=utf-8\n");
+          		builder.append("\n");
+          		builder.append("Please use the proper format");
+		}
+	} else {
           // if the request is not recognized at all
 
           builder.append("HTTP/1.1 400 Bad Request\n");

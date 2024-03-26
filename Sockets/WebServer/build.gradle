@@ -1,5 +1,15 @@
 // set as java application
-apply plugin: 'application'
+plugins {
+   id 'application'
+}
+ 
+repositories {
+      mavenCentral()
+}
+
+dependencies {
+implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+}
 
 //define main class
 mainClassName = 'SimpleServer'
